@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "model": "C3APRO",
+  "sdk": "34",
+  "historical_abi": "armeabi-v7a",
+  "google_core": [
+    "com.google.android.gsf",
+    "com.google.android.gms",
+    "com.android.vending",
+    "com.google.android.youtube.tv"
+  ],
+  "google_native": [
+    "com.google.android.apps.mediashell",
+    "com.google.android.apps.tv.dreamx",
+    "com.google.android.apps.tv.launcherx",
+    "com.google.android.feedback",
+    "com.google.android.katniss",
+    "com.google.android.partnersetup",
+    "com.google.android.play.games",
+    "com.google.android.syncadapters.calendar",
+    "com.google.android.tungsten.setupwraith",
+    "com.google.android.tv.remote.service",
+    "com.google.android.youtube.tvmusic"
+  ],
+  "google_home": "com.google.android.apps.tv.launcherx/.home.HomeActivity",
+  "notes": "Observed on one device; a fixed package list is not proof that another firmware contains or permits these packages."
+}

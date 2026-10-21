@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.huahua0910.c3apro.policy" android:versionCode="1" android:versionName="0.1.0-test">
+    <uses-sdk android:minSdkVersion="34" android:targetSdkVersion="34" />
+    <uses-feature android:name="android.software.leanback" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <queries>
+        <package android:name="com.google.android.gsf" />
+        <package android:name="com.google.android.gms" />
+        <package android:name="com.android.vending" />
+        <package android:name="com.google.android.youtube.tv" />
+        <package android:name="com.google.android.apps.mediashell" />
+        <package android:name="com.google.android.apps.tv.dreamx" />
+        <package android:name="com.google.android.apps.tv.launcherx" />
+        <package android:name="com.google.android.feedback" />
+        <package android:name="com.google.android.katniss" />
+        <package android:name="com.google.android.partnersetup" />
+        <package android:name="com.google.android.play.games" />
+        <package android:name="com.google.android.syncadapters.calendar" />
+        <package android:name="com.google.android.tungsten.setupwraith" />
+        <package android:name="com.google.android.tv.remote.service" />
+        <package android:name="com.google.android.youtube.tvmusic" />
+    </queries>
+    <application android:label="Google恢复实验" android:icon="@drawable/icon" android:allowBackup="false" android:testOnly="true" android:theme="@android:style/Theme.Material.NoActionBar">
+        <receiver android:name=".LocalAdmin" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true">
+            <meta-data android:name="android.app.device_admin" android:resource="@xml/device_admin" />
+            <intent-filter><action android:name="android.app.action.DEVICE_ADMIN_ENABLED" /></intent-filter>
+        </receiver>
+        <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LEANBACK_LAUNCHER" /></intent-filter>
+        </activity>
+    </application>
+</manifest>

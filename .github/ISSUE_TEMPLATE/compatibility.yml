@@ -1,0 +1,25 @@
+name: 固件适配与问题反馈
+description: 提供脱敏后的版本、步骤和实际结果
+title: "[适配] 型号 / API / 问题"
+body:
+  - type: markdown
+    attributes:
+      value: "请只提交脱敏摘要。不要粘贴账号、地址、设备唯一标识、配对码、订阅、Cookie或完整日志。"
+  - type: textarea
+    id: environment
+    attributes:
+      label: 型号、API、ABI与公开固件版本
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 操作步骤、相关应用版本与预期
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: 实际结果、首个错误摘要、回退情况
+    validations:
+      required: true
