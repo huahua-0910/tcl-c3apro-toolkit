@@ -4,7 +4,7 @@
 
 这是 **27C3A Pro 内置 Android 系统**的社区指南与小工具，不是 TCL 固件、Google 认证 ROM 或刷机包。中文优先，面向普通用户与协作智能体。
 
-**初始版本 0.1.0**：整理自一台 `C3APRO / Android 14 / API 34 / armeabi-v7a` 的实际调试。公开版工具已重构，设备执行仍需使用者验证；历史实测与公开工具的验证范围分开记录。
+**工具与指南 0.1.1；设置入口 APK 0.1.0**：整理自一台 `C3APRO / Android 14 / API 34 / armeabi-v7a` 的实际调试。公开版工具已重构，设备执行仍需使用者验证；历史实测与公开工具的验证范围分开记录。
 
 ## 从这里开始
 
@@ -13,7 +13,7 @@
 3. [应用选择与安装](docs/04-apps.md)：官方客户端、ARM32、免费投屏与第三方替代。
 4. [回退与故障排查](docs/05-rollback.md)：恢复默认桌面、APK 回装及备份的实际边界。
 
-只想快速找设置：在 [Releases](https://github.com/huahua-0910/tcl-c3apro-toolkit/releases) 下载本项目的 `settings-hub-0.1.0.apk`，用系统已有的本地 APK 安装方式安装，再打开“设置与调试”。它只导航到原系统页面，没有联网、后台服务或设备管理权限。入口是否存在及允许启动取决于固件，APK 不能凭空开启 ADB。
+只想快速找设置：在 [设置入口发行页](https://github.com/huahua-0910/tcl-c3apro-toolkit/releases/tag/v0.1.0) 下载本项目的 `settings-hub-0.1.0.apk`，用系统已有的本地 APK 安装方式安装，再打开“设置与调试”。它只导航到原系统页面，没有联网、后台服务或设备管理权限。入口是否存在及允许启动取决于固件，APK 不能凭空开启 ADB。
 
 ## 能做什么
 
@@ -30,10 +30,10 @@
 
 ## 最短命令路径
 
-需要 Python 3.10+ 与 Android Platform Tools。连接端点来自当前无线调试页面，不是配对端口。
+需要 Python 3.10+ 与 Android Platform Tools。在仓库根目录执行；先按[配对与端点输入](docs/01-quickstart.md#3-配对与连接)设置当前终端的 `TV_ENDPOINT`。连接端点来自无线调试主页面，不是配对端口。
 
 ```sh
-python3 tools/tvkit.py --serial "$TV_ENDPOINT" inspect
+python3 tools/tvkit.py --serial "$TV_ENDPOINT" inspect --out state/inspect-before.json
 python3 tools/tvkit.py --serial "$TV_ENDPOINT" backup \
   --package com.google.android.apps.tv.launcherx \
   --package com.google.android.tungsten.setupwraith
@@ -41,7 +41,7 @@ python3 tools/tvkit.py --serial "$TV_ENDPOINT" backup \
 
 `TV_ENDPOINT` 由使用者在本地设置。备份写入被 Git 忽略的 `state/`；此目录只留在自己电脑上。Google 包不存在或尚未可读取时先阅读 [恢复分支](docs/03-google-recovery.md)。
 
-桌面切换示例（Google 正常初始化完成、包已可用的前提下）：
+桌面切换示例（Google 正常初始化完成、包已可用，并且原默认桌面也可作为回退目标的前提下）：
 
 ```sh
 python3 tools/tvkit.py --serial "$TV_ENDPOINT" home \
@@ -65,6 +65,7 @@ python3 tools/tvkit.py --serial "$TV_ENDPOINT" home \
 | [构建 Android 工具](docs/07-build.md) | 自己编译设置入口或研究 DPC |
 | [公开化与隐私](docs/08-privacy.md) | 提交日志、截图、贡献或准备发布 |
 | [来源与设计依据](docs/09-sources.md) | 查看第一方文档及上游项目 |
+| [首次使用复核](docs/12-first-use-review.md) | 查看0.1.1修复的问题与模拟演练范围 |
 | [当前进度](docs/10-status.md) | 查看完成项、局限和下一步 |
 | [贡献说明](CONTRIBUTING.md) | 提交固件兼容结果或修改 |
 | [AGENTS.md](AGENTS.md) | 让智能体辅助维护、诊断与操作 |

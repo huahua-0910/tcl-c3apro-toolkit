@@ -13,10 +13,12 @@
 ## 提交前
 
 1. 先人工看差异和每个新增文件；若是界面图，遮挡账号/二维码/设备标识并移除元数据。项目初版没有截图。
-2. 运行 `python3 tools/audit_public.py` 与 `git diff --cached --check`。扫描只报告文件名与规则，不回显疑似秘密原文。
-3. 确认Git暂存列表只有计划公开的文本。APK仅经审核后放Release，不跟踪在Git历史。
-4. issue只填型号/API/ABI、去标识的公开固件版本、包名与相关错误摘要；不贴完整原始日志。
+2. `git add`明确选入文件后运行 `python3 tools/audit_public.py`：Git模式读取实际暂存blob，避免工作区已清理、暂存区却还保留旧秘密。另跑 `python3 tools/audit_public.py --source tree` 检查当前源文件树，包括未暂存文本；默认排除本地state/build/dist和.git等目录。
+3. 发布前再跑 `python3 tools/audit_public.py --history`，检查暂存区及所有可达引用中的历史文件blob；CI会获取完整历史并运行这项检查。历史模式不审计commit作者元数据、远端已删除引用、issue、Release附件或外部缓存；这些仍需单独检查。
+4. `git diff --cached --check`检查空白。扫描只报告文件名与规则，不回显疑似秘密原文。ZIP解压没有Git元数据时自动使用tree模式；ZIP不能检查Git历史。
+5. 确认Git暂存列表只有计划公开的文本。APK仅经审核后放Release，不跟踪在Git历史。
+6. issue只填型号/API/ABI、去标识的公开固件版本、包名与相关错误摘要；不贴完整原始日志。
 
-自动扫描能抓常见路径、局域网地址、MAC、令牌/私钥和敏感URI，但可能漏掉混淆、截图、未知格式或低熵秘密，不能宣称绝对无敏感信息。
+自动扫描覆盖常见路径、IPv4/IPv6地址、MAC、令牌/私钥、Cookie/Authorization头、敏感赋值与URI；回环与标准文档示例网段允许出现。但仍可能漏掉混淆、截图、未知格式或低熵秘密，不能宣称绝对无敏感信息。
 
 若发现已公开凭据，先撤销对应凭据并联系仓库维护者处理历史；删掉当前文件不能消除既有Git副本。报告时使用GitHub私密安全报告（若已启用）或脱敏issue，不在公开issue展示实际秘密。

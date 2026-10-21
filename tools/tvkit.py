@@ -21,7 +21,7 @@ COMPONENT = re.compile(r'[A-Za-z][A-Za-z0-9_.]+/[A-Za-z0-9_.$]+\Z')
 def checked(output):
     """Android shell tools can exit zero while reporting a failed operation."""
     if re.search(r'(?im)^\s*(error(?:\b|:)|failure(?:\b|\[)|exception\b|securityexception\b)', output):
-        raise RuntimeError('Android reported failure; inspect the local command output.')
+        raise RuntimeError('Android reported failure: ' + output.strip())
     return output.strip()
 
 
@@ -74,7 +74,8 @@ class Device:
         proc = subprocess.run([self.adb, '-s', self.serial, *args], capture_output=True,
                               text=True, timeout=timeout)
         if proc.returncode:
-            raise RuntimeError('ADB failed: ' + proc.stderr.strip())
+            raise RuntimeError('ADB failed: ' + '\n'.join(
+                part.strip() for part in [proc.stderr, proc.stdout] if part.strip()))
         checked(proc.stderr)
         return checked(proc.stdout)
 
@@ -142,6 +143,7 @@ def switch_home(device, component, apply, directory):
     identity = device.guard()
     ready_home(device, component)
     before = device.home()
+    ready_home(device, before)  # A resolver/absent original HOME is not a recovery path.
     plan = {'operation': 'home', 'before_home': before, 'target_home': component,
             'changes': ['default HOME only'], 'applied': False}
     if not apply:
@@ -150,27 +152,40 @@ def switch_home(device, component, apply, directory):
     receipt = dict(plan, schema=1, identity=identity, binding=device.binding(),
                    time=dt.datetime.now(dt.timezone.utc).isoformat(), status='PREPARED')
     save(path, receipt)  # A durable baseline must exist before the first write.
+    receipt['status'] = 'APPLYING'
+    save(path, receipt)  # Failure here aborts before touching the device.
     try:
-        receipt['status'] = 'APPLYING'
-        save(path, receipt)
         set_home(device, component)
         receipt.update(status='PASS_HOME_RESOLUTION', applied=True,
                        physical_home_key='NOT_RUN')
+        save(path, receipt)
     except Exception as error:
         receipt['status'] = 'FAILED'
         receipt['failure'] = {'type': type(error).__name__, 'message': str(error)}
-        save(path, receipt)
+        write_failures = []
+
+        def try_save():
+            try:
+                save(path, receipt)
+            except Exception as write_error:
+                write_failures.append(str(write_error))
+
+        try_save()
+        # A full disk or lost directory must never prevent the recovery attempt.
         try:
             ready_home(device, before)
             set_home(device, before)
             receipt['rollback'] = 'PASS_HOME_RESOLUTION'
+            receipt['applied'] = False
         except Exception as recovery_error:
             receipt['rollback'] = 'FAILED_REQUIRES_LOCAL_REVIEW'
             receipt['rollback_failure'] = {'type': type(recovery_error).__name__,
                                            'message': str(recovery_error)}
-        save(path, receipt)
-        raise RuntimeError('HOME change failed; local receipt: ' + str(path)) from None
-    save(path, receipt)
+        receipt['receipt_write_failures'] = write_failures
+        try_save()
+        raise RuntimeError('HOME change failed: ' + str(error) + '; rollback=' + receipt['rollback']
+                           + '; receipt_write_failures=' + str(len(write_failures))
+                           + '; local receipt (may be stale): ' + str(path)) from None
     return {'receipt': str(path), 'status': receipt['status'], 'physical_home_key': 'NOT_RUN'}
 
 
@@ -186,10 +201,17 @@ def restore_home(device, path, apply):
 
 
 def inspect(device):
-    return {'identity': device.identity(), 'home': device.home(),
+    return {'identity': device.identity(), 'current_user': device.shell('am', 'get-current-user'),
+            'package_state_user': 0, 'home': device.home(),
             'display': {'size': device.shell('wm', 'size'), 'density': device.shell('wm', 'density')},
             'google': {p: device.state(p) for p in PROFILE['google_core'] + PROFILE['google_native']},
             'scope': 'Read-only; no account, network configuration, screenshot or logcat dump.'}
+
+
+def nonempty(value):
+    if not value.strip():
+        raise argparse.ArgumentTypeError('Set TV_ENDPOINT from the current connection page first.')
+    return value.strip()
 
 
 def backup(device, packages, directory):
@@ -234,10 +256,12 @@ def backup(device, packages, directory):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--serial', required=True, help='Current authorized ADB connection endpoint')
+    parser.add_argument('--serial', required=True, type=nonempty,
+                        help='Current authorized ADB connection endpoint')
     parser.add_argument('--adb', default='adb')
     commands = parser.add_subparsers(dest='command', required=True)
-    commands.add_parser('inspect')
+    i = commands.add_parser('inspect')
+    i.add_argument('--out', help='Save a private baseline JSON locally, e.g. state/inspect-before.json')
     b = commands.add_parser('backup')
     b.add_argument('--package', action='append', required=True)
     b.add_argument('--out', default=str(ROOT / 'state'))
@@ -253,6 +277,8 @@ def main():
     try:
         if args.command == 'inspect':
             result = inspect(device)
+            if args.out:
+                save(args.out, result)
         elif args.command == 'backup':
             result = backup(device, args.package, args.out)
         elif args.command == 'home':

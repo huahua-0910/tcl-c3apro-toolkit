@@ -1,6 +1,6 @@
 # 构建本项目Android工具
 
-需要JDK17、Android SDK Platform34、Build Tools35.0.0，以及Python3.10+。通过Google官方SDK Manager准备工具，不从本仓库下载SDK/JDK。脚本不下载依赖、不连接ADB、不安装APK。
+构建脚本支持macOS/Linux；Windows请使用WSL及Linux版工具链，不直接传Windows的exe路径。需要JDK17、Android SDK Platform34、Build Tools35.0.0，以及Python3.10+。通过Google官方SDK Manager准备工具，不从本仓库下载SDK/JDK。脚本不下载依赖、不连接ADB、不安装APK。
 
 在本地设置以下路径：`JAVA_HOME` 为JDK17；`ANDROID_HOME` 为SDK根目录。
 
@@ -23,8 +23,9 @@ python3 tools/build_android.py --app settings-hub \
 
 ```sh
 python3 -m unittest discover -s tests -v
-python3 tools/audit_public.py
+python3 tools/audit_public.py --source tree
+python3 tools/audit_public.py --history
 git diff --check
 ```
 
-隐私检查针对Git跟踪文件；新增文件先 `git add` 再扫描。脚本不能代替人工审阅，也不扫描本地忽略的私人目录。发布APK前另做manifest权限、DEX字符串、原生库与签名检查。项目未声称APK字节可重现构建：签名、时间和工具链会影响字节；源码摘要用于追溯。
+Git模式的隐私检查读取真实暂存内容；新增文件先 `git add`，再检查暂存区、源文件树与可达历史。ZIP模式只检查源文件树。脚本不能代替人工审阅，详细范围见[隐私说明](08-privacy.md)。发布APK前另做manifest权限、DEX字符串、原生库与签名检查。项目未声称APK字节可重现构建：签名、时间和工具链会影响字节；源码摘要用于追溯。

@@ -4,7 +4,7 @@
 
 提交设备结果时填写：型号、API/ABI、公开固件版本、日期、相关应用版本、实际步骤、预期与观察、首个错误和回退结果。包名可以公开，设备标识、账号、SSID、地址、Cookie与完整日志留在本地。参见 [隐私说明](docs/08-privacy.md)。
 
-代码变更先跑 `python3 -m unittest discover -s tests -v`；新增文本暂存后跑 `python3 tools/audit_public.py` 和 `git diff --cached --check`。有Android改动时自行编译并核对权限与入口。无需操作电视才能贡献文档或工具测试。
+代码变更先跑 `python3 -m unittest discover -s tests -v`；新增文本暂存后跑 `python3 tools/audit_public.py`、`python3 tools/audit_public.py --source tree`、`python3 tools/audit_public.py --history` 和 `git diff --cached --check`。暂存扫描读取index而不是工作区；ZIP解压用户可以直接运行tree扫描，但不能验证Git历史。有Android改动时自行编译并核对权限与入口。无需操作电视才能贡献文档或工具测试。
 
 回归验证应覆盖失败与恢复路径，不仅验证计划打印。新设备只读结果可以提交；没有实际执行的步骤标NOT_RUN。维护者会区分历史单机、模拟测试和新设备验收。
 

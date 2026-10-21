@@ -120,6 +120,45 @@ class TransactionTests(unittest.TestCase):
                 kit.switch_home(device, NEW, True, '/unused')
         self.assertEqual(device.writes, [])
 
+    def test_receipt_write_failure_after_device_error_still_rolls_back(self):
+        device = FakeDevice()
+        device.fail_target = True
+        real_save = kit.save
+        with tempfile.TemporaryDirectory() as folder:
+            def fail_after_mutation(path, data):
+                if device.writes:
+                    raise OSError('storage became unavailable')
+                return real_save(path, data)
+            with patch.object(kit, 'save', side_effect=fail_after_mutation):
+                with self.assertRaises((OSError, RuntimeError)):
+                    kit.switch_home(device, NEW, True, folder)
+            self.assertEqual(device.writes, [NEW, OLD])
+
+    def test_unusable_original_home_blocks_change(self):
+        device = FakeDevice()
+        device.current = 'org.example.resolver/.ResolverActivity'
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaises(RuntimeError):
+                kit.switch_home(device, NEW, True, folder)
+        self.assertEqual(device.writes, [])
+
+    def test_success_receipt_failure_reverts_device_instead_of_claiming_pass(self):
+        device = FakeDevice()
+        real_save = kit.save
+        with tempfile.TemporaryDirectory() as folder:
+            def fail_final_receipt(path, data):
+                if data['status'] == 'PASS_HOME_RESOLUTION':
+                    raise OSError('final receipt cannot be persisted')
+                return real_save(path, data)
+            with patch.object(kit, 'save', side_effect=fail_final_receipt):
+                with self.assertRaises(RuntimeError):
+                    kit.switch_home(device, NEW, True, folder)
+            self.assertEqual(device.current, OLD)
+            data = json.loads(next(Path(folder).glob('*.json')).read_text())
+            self.assertEqual(data['status'], 'FAILED')
+            self.assertEqual(data['failure']['type'], 'OSError')
+            self.assertEqual(data['rollback'], 'PASS_HOME_RESOLUTION')
+
     def test_cross_device_restore_refused(self):
         device = FakeDevice()
         with tempfile.TemporaryDirectory() as folder:
@@ -160,8 +199,9 @@ class TransactionTests(unittest.TestCase):
 class AdbBoundaryTests(unittest.TestCase):
     def test_android_zero_exit_error_detected(self):
         for output in ['Error: not allowed', 'Failure [INSTALL_FAILED]', 'SecurityException: denied']:
-            with self.assertRaises(RuntimeError):
+            with self.assertRaisesRegex(RuntimeError, 'Android reported failure') as caught:
                 kit.checked(output)
+            self.assertIn(output, str(caught.exception))
 
     def test_shell_arguments_quoted_and_no_local_shell(self):
         result = subprocess.CompletedProcess([], 0, 'ok', '')
