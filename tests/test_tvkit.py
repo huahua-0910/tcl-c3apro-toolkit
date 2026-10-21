@@ -99,6 +99,7 @@ class TransactionTests(unittest.TestCase):
                 kit.switch_home(device, NEW, True, folder)
             data = json.loads(next(Path(folder).glob('*.json')).read_text())
             self.assertEqual(data['status'], 'FAILED')
+            self.assertEqual(data['failure']['message'], 'mock first operation failed')
             self.assertEqual(data['rollback'], 'PASS_HOME_RESOLUTION')
             self.assertEqual(device.writes, [NEW, OLD])
 
@@ -110,6 +111,7 @@ class TransactionTests(unittest.TestCase):
                 kit.switch_home(device, NEW, True, folder)
             data = json.loads(next(Path(folder).glob('*.json')).read_text())
             self.assertEqual(data['rollback'], 'FAILED_REQUIRES_LOCAL_REVIEW')
+            self.assertIn('rollback_failure', data)
 
     def test_baseline_storage_failure_blocks_first_write(self):
         device = FakeDevice()

@@ -156,15 +156,18 @@ def switch_home(device, component, apply, directory):
         set_home(device, component)
         receipt.update(status='PASS_HOME_RESOLUTION', applied=True,
                        physical_home_key='NOT_RUN')
-    except Exception:
+    except Exception as error:
         receipt['status'] = 'FAILED'
+        receipt['failure'] = {'type': type(error).__name__, 'message': str(error)}
         save(path, receipt)
         try:
             ready_home(device, before)
             set_home(device, before)
             receipt['rollback'] = 'PASS_HOME_RESOLUTION'
-        except Exception:
+        except Exception as recovery_error:
             receipt['rollback'] = 'FAILED_REQUIRES_LOCAL_REVIEW'
+            receipt['rollback_failure'] = {'type': type(recovery_error).__name__,
+                                           'message': str(recovery_error)}
         save(path, receipt)
         raise RuntimeError('HOME change failed; local receipt: ' + str(path)) from None
     save(path, receipt)
@@ -220,8 +223,9 @@ def backup(device, packages, directory):
                 manifest['packages'][package]['files'].append({'name': name, 'sha256': digest})
                 save(out / 'manifest.json', manifest)
         manifest['status'] = 'PASS_APK_COPY_AND_DIGEST'
-    except Exception:
+    except Exception as error:
         manifest['status'] = 'FAILED_PARTIAL_BACKUP'
+        manifest['failure'] = {'type': type(error).__name__, 'message': str(error)}
         save(out / 'manifest.json', manifest)
         raise
     save(out / 'manifest.json', manifest)
