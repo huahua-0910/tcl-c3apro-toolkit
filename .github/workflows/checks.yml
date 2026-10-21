@@ -21,7 +21,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - run: sdkmanager "platforms;android-34" "build-tools;35.0.0"
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: 'false'
       - name: Build both first-party applications
         run: |
           python3 tools/build_android.py --app settings-hub --java-home "$JAVA_HOME" --sdk-jar "$ANDROID_HOME/platforms/android-34/android.jar" --build-tools "$ANDROID_HOME/build-tools/35.0.0"
